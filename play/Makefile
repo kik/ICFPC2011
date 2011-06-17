@@ -1,5 +1,8 @@
-SOURCES = ltd.ml play.ml
+SOURCES = ltg.ml play.ml
 RESULT = play
 
--include /usr/share/ocamlmakefile/OCamlMakefile
+-include OCamlMakefile
+
+all: byte-code native-code
+
 
