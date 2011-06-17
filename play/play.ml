@@ -29,8 +29,8 @@ type value =
   | ValZombiei of value
 
 type slot = {
-  field : value ref;
-  vitality : int ref;
+  mutable field : value;
+  mutable vitality : int;
 }
 
 type slots = slot array
@@ -54,38 +54,80 @@ let value_of_card c =
     | CardRevive -> ValRevive
     | CardZombie -> ValZombie
 
-let rec eval_app player board n v w :=
-    let eval_app' = eval_app player board in
-    let pure x = n + 1, x in
+let rec eval_app player zombie board n v w :=
+    let n = n + 1 in
+    if n > 1000 then raise AppLimit;
+    let result x = n, x in
+    let eval_succ v = ValNum (limit_int (int_of_value v + 1)) in
+    let eval_dbl  v = ValNum (limit_int (int_of_value v * 2)) in
+    let eval_get  v = (read_slot_alive (slot_index_of_value v) player board).field in
+    let exec_inc  v =
+      let s = read_slot (slot_index_of_value v) player board in
+      if alive s then s.vitality <- limit_vitality (s.vitality + 1)
+    in
+    let exec_dec v =
+      let s = read_slot (slot_index_of_value v) (opponent player) board in
+      if alive s then s.vitality <- limit_vitality (s.vitality - 1)
+    in
+    let exec_attack i j v =
+      let s0 = read_slot (slot_index_of_value i) player board in
+      let n  = int_of_value v in
+      if s0.vitality < n then raise ExecFailed;
+      s0.vitality <- s0.vitality - n;
+      let s1 = read_slot_rev (slot_index_of_value j) (opponent player) board in
+      if alive s1 then
+	s1.vitality <- s1.vitality - n * 9 / 10
+    in
+    let exec_help i j v =
+      let s0 = read_slot (slot_index_of_value i) player board in
+      let n  = int_of_value v in
+      if s0.vitality < n then raise ExecFailed;
+      s0.vitality <- s0.vitality - n;
+      let s1 = read_slot (slot_index_of_value j) player board in
+      if alive s1 then
+	s1.vitality <- s1.vitality + n * 11 / 10
+    in
+    let eval_copy v =
+      let s = read_slot (slot_index_of_value i) (opponent player) board in
+      s.field
+    in
+    let exec_revive v =
+      let s = read_slot (slot_index_of_value i) player board in
+      if s.vitality <= 0 then
+	s.vitality <- 1
+    in
+    let exec_zombie i v =
+      let s = read_slot_rev (slot_index_of_value i) (opponent player) board in
+      if alive s.vitality then raise ExecFailed;
+      s.field <- v;
+      s.vitality <- -1
+    in
     match v with
       | ValNum i -> raise NotFun
-      | ValI -> pure w
-      | ValSucc -> pure (eval_succ w)
-      | ValDbl -> pure (eval_dbl w)
-      | ValGet -> pure (eval_get w player board)
-      | ValPut -> pure ValI
-      | ValS -> pure (ValSf w)
-      | ValSf(f) -> pure (ValSfg(f, w))
+      | ValI     -> result w
+      | ValSucc  -> result (eval_succ w)
+      | ValDbl   -> result (eval_dbl w)
+      | ValGet   -> result (eval_get w)
+      | ValPut   -> result ValI
+      | ValS     -> result (ValSf w)
+      | ValSf(f) -> result (ValSfg(f, w))
       | ValSfg(f, g) ->
-	let n = n + 1 in
+	let eval_app' = eval_app player board zombie in
 	let (n, h) = eval_app' n f w in
 	let (n, y) = eval_app' n g w in
 	eval_app' n h y
-      | ValK -> pure (ValKx w)
-      | ValKx(x) -> prue x
-      | ValInc -> exec_inc w player board; pure ValI
-      | ValDec -> exec_dec w player board; pure ValI
-      | ValAttack -> pure (ValAttacki w)
-      | ValAttacki(i) -> pure (ValAttackij(i, w))
-      | ValAttackij(i,j) -> exec_attack w player board; pure ValI
-      | ValHelp -> pure (ValHelpi w)
-      | ValHelpi(i) -> pure (ValHelpj(i, w))
-      | ValHelpij -> exec_help w player board; pure ValI
-      | ValCopy -> eval_copy w player board
-      | ValRevive -> exec_revive w player board; pure ValI
-      | ValZombie -> pure (ValZombiei w)
-      | ValZombiei(i) -> exec_zombie i w player board; pure ValI
-
-and eval_succ v = ValNum (limit_int (int_of_value v + 1))
-and eval_dbl  v = ValNum (limit_int (int_of_value v * 2))
-and eval_get v player board = (read_slot_alive (slot_of_value v) player board).field
+      | ValK             -> result (ValKx w)
+      | ValKx(x)         -> prue x
+      | ValInc           -> exec_inc w; result ValI
+      | ValDec           -> exec_dec w; result ValI
+      | ValAttack        -> result (ValAttacki w)
+      | ValAttacki(i)    -> result (ValAttackij(i, w))
+      | ValAttackij(i,j) -> exec_attack w; result ValI
+      | ValHelp          -> result (ValHelpi w)
+      | ValHelpi(i)      -> result (ValHelpj(i, w))
+      | ValHelpij        -> exec_help w; result ValI
+      | ValCopy          -> result (eval_copy w)
+      | ValRevive        -> exec_revive w; result ValI
+      | ValZombie        -> result (ValZombiei w)
+      | ValZombiei(i)    -> exec_zombie i w; result ValI
+	
