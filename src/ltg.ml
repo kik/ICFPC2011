@@ -329,3 +329,59 @@ let zombie_turn player board f =
       let res = eval_app player true board s.field ValI in
       f i res
   done
+
+let turn_iter f =
+  for t = 1 to 100000 do
+    for p = 0 to 1 do
+      f p t
+    done
+  done
+
+type cmd =
+  | LeftApp of card * int
+  | RightApp of int * card
+
+let exec_cmd player board cmd = match cmd with
+  | LeftApp(c, i) -> (* eprintf "%a@." format_result *) ignore (left_app player board c i)
+  | RightApp(i, c) -> (* eprintf "%a@." format_result *) ignore (right_app player board i c)
+
+let write_cmd cmd = match cmd with
+  | LeftApp(c, i) -> Printf.printf "1\n%s\n%d\n" (str_of_card c) i; flush_all ()
+  | RightApp(i, c) -> Printf.printf "2\n%d\n%s\n" i (str_of_card c); flush_all ()
+
+let read_cmd () =
+  let app = read_int () in
+  if app = 1 then
+    let c = card_of_str (read_line ()) in
+    let i = read_int () in
+    LeftApp(c, i)
+  else
+    let i = read_int () in
+    let c = card_of_str (read_line ()) in
+    RightApp(i, c)
+
+let run_main main =
+  let v = Sys.argv.(1) in
+  let board = make_board () in
+  main (if v = "0" then 0 else 1) board
+
+let run_simple_main simple_main =
+  run_main (fun player board ->
+    turn_iter (fun p turn ->
+      let c = if player = p then
+	  let c = simple_main player board in
+	  write_cmd c; c
+	else
+	  read_cmd ()
+      in
+      zombie_turn p board (fun i res -> ());
+      exec_cmd p board c))
+
+let run_solitaire_main lis =
+  let lis = ref lis in
+  run_simple_main (fun p turn ->
+    match !lis with
+      | [] -> LeftApp(CardI, 0)
+      | c :: lis' ->
+	lis := lis'; c)
+

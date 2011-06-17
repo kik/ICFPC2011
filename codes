@@ -11,6 +11,11 @@ x(1):
 x(get 0):
         S(Kx)(get)0
 
+x(get 1):
+        S(K(S(Kx)(get)))(succ)0
+        x(get(succ 0))
+        S(Kx)(get)(succ 0)
+
 lazy x: any -> x
         K x
 
