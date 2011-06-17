@@ -90,6 +90,19 @@ type trace =
   | TraceRevive of int
   | TraceZombie of int * value
 
+let format_trace pp t = match t with
+  | TraceInc(z, i) -> fprintf pp "TraceInc(%B, %d)" z i
+  | TraceDec(z, i) -> fprintf pp "TraceDec(%B, %d)" z i
+  | TraceAttackDec(i, n) -> fprintf pp "TraceAttacDec(%d, %d)" i n
+  | TraceAttack(z, i, n) -> fprintf pp "TraceAttack(%B, %d, %d)" z i n
+  | TraceHelpDec(i, n) -> fprintf pp "TraceHelpDec(%d, %d)" i n
+  | TraceHelp(z, i, n) -> fprintf pp "TraceHelp(%B, %d, %d)" z i n
+  | TraceRevive(i) -> fprintf pp "TraceRevive(%d)" i
+  | TraceZombie(i, v) -> fprintf pp "TraceZombie(%d, %a)" i format_value v
+
+let format_trace_list pp ts =
+  List.iter (fun t -> fprintf pp "%a@," format_trace t) ts
+
 type slot = {
   mutable field : value;
   mutable vitality : int;
@@ -98,9 +111,14 @@ type slot = {
 type slots = slot array
 type board = slots array
 
+let format_slots pp ss =
+  Array.iteri (fun i s ->
+    if s.field <> ValI || s.vitality <> 10000 then
+      fprintf pp "[%d, %a, %d]@," i format_value s.field s.vitality) ss
+
 let make_board () =
   Array.init 2 (fun _ ->
-    Array.init 256 (fun _ ->
+    Array.init 256 (fun i ->
       { field = ValI; vitality = 10000 }))
 
 let value_of_card c =
@@ -124,6 +142,12 @@ let value_of_card c =
 type eval_result =
   | ResultValue of int * trace list * value
   | ResultFailure of trace list
+
+let format_result pp r = match r with
+  | ResultValue(n, tr, value) ->
+    fprintf pp "%d-applications, result = %a@\n@[<hov 2>%a@]@\n" n format_value value format_trace_list tr
+  | ResultFailure(tr) ->
+    fprintf pp "error@\n@[<hov 2>%a@]@\n" format_trace_list tr
 
 exception EvalFail of eval_result
 
@@ -280,17 +304,28 @@ let rec eval_app player zombie board tr n v w =
 let eval_app player zombie board v w =
   eval_app player zombie board [] 0 v w
 
+let update_slot s res =
+  let v = match res with
+    | ResultValue(n, tr, v) -> v
+    | ResultFailure(tr) -> ValI
+  in
+  s.field <- v;
+  res
+
 let left_app player board c x =
-  eval_app player false board (value_of_card c) board.(player).(x).field
+  let s = board.(player).(x) in
+  let res = eval_app player false board (value_of_card c) s.field in
+  update_slot s res
 
 let right_app player board x c =
-  eval_app player false board board.(player).(x).field (value_of_card c)
+  let s = board.(player).(x) in
+  let res = eval_app player false board s.field (value_of_card c) in
+  update_slot s res
 
-let zombie_turn player board =
+let zombie_turn player board f =
   for i = 0 to 255 do
     let s = board.(player).(i) in
-    if s.vitality = -1 then begin
+    if s.vitality = -1 then
       let res = eval_app player true board s.field ValI in
-      ignore res
-    end
+      f i res
   done
