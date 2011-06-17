@@ -36,3 +36,23 @@ S(x)(y):
         @0      y
         S(K(Sx))(get)0
 
+Sapp x y = S (x y)
+        Sapp = S(KS)
+
+comp x y z = x (y z)
+        comp = Sapp K
+
+[0] x y = y
+      	[0] = P
+
+[1] x y = x y
+        [1] = SP
+
+[2] x y = x (x y)
+        [2] = S(comp)I
+
+[PLUS] x y z w = x z (y z w)
+        [PLUS] = Sapp(S(K(comp)))
+
+[MULT] x y z = x (y z)
+        [MULT] = comp
