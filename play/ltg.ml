@@ -203,7 +203,7 @@ let rec eval_app player zombie board tr n v w =
 
     let exec_dec v =
       let si = slot_index_of_value tr v in
-      let s = read_slot si (opponent player) board in
+      let s = read_slot_rev si (opponent player) board in
       let d = if zombie then 1 else -1 in
       if alive s then add_vitality s d;
       result_with_trace (TraceDec(zombie, si) :: tr) ValI

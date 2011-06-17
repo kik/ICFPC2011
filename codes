@@ -1,0 +1,38 @@
+@0      S(get)(I)0      infinit loop
+
+@0      S(K(S(K(S(get)))))(S)(K)(dec)0  infinite dec 0
+
+
+        S(attack(n)(m))
+
+x(1):
+        S(Kx)(succ)0
+
+x(get 0):
+        S(Kx)(get)0
+
+lazy x: any -> x
+        K x
+
+lazy (x y): any -> x y
+        S(lazy x)(lazy y)
+
+lazy (get 0): any -> get 0
+        S(K(get))(K(0))
+
+lazy (get n): any -> get n
+        S(K(get))(K(n))
+
+x(lazyget 0):
+        S(Kx)(lazyget 0)(any)
+
+S(x)(get 0):
+        S(K(Sx))(get)0
+
+S(x)(yz):
+        S(K(Sx))yz
+
+S(x)(y):
+        @0      y
+        S(K(Sx))(get)0
+
