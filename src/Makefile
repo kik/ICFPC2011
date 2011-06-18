@@ -1,5 +1,5 @@
 
-LIB_SOURCES = ltg.ml
+LIB_SOURCES = ltg.ml ltgext.ml
 
 SOURCES = $(LIB_SOURCES) play.ml
 RESULT = play

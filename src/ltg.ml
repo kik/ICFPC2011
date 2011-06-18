@@ -369,7 +369,7 @@ let run_simple_main simple_main =
   run_main (fun player board ->
     turn_iter (fun p turn ->
       let c = if player = p then
-	  let c = simple_main player board in
+	  let c = simple_main player board turn in
 	  write_cmd c; c
 	else
 	  read_cmd ()
@@ -379,7 +379,7 @@ let run_simple_main simple_main =
 
 let run_solitaire_main lis =
   let lis = ref lis in
-  run_simple_main (fun p turn ->
+  run_simple_main (fun p board turn ->
     match !lis with
       | [] -> LeftApp(CardI, 0)
       | c :: lis' ->
