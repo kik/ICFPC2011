@@ -33,6 +33,15 @@ Inductive value : Set :=
   | ValZombie
   | ValZombiei : value -> value.
 
+Definition value_eq_dec (x y: value) : { x = y } + { x <> y }.
+Proof.
+  decide equality.
+  apply intl_eq_dec.
+Defined.
+
+Definition eqvalue x y :=
+  if value_eq_dec x y then true else false.
+
 Inductive trace : Set :=
   | TraceInc : bool -> intl -> trace
   | TraceDec : bool -> intl -> trace
@@ -58,7 +67,7 @@ Definition oppp p :=
     | Player1 => Player0
   end.
 
-Definition oppsi si := intl_255 - si.
+Definition oppsi si : intl := 255 - si.
 
 Record board : Set := {
   getf : player -> intl -> value;
@@ -71,7 +80,7 @@ Inductive alivep : Set :=
 
 Definition alive bd p si :=
   match getv bd p si with
-    | Some v => if v > intl_0 then Alive v else Dead
+    | Some v => if v > 0 then Alive v else Dead
     | None => Dead
   end.
 
@@ -115,13 +124,13 @@ Section eval_fun.
 
     Let exec_slot_chk v tr bd f :=
       exec_intl_chk v tr bd (fun x =>
-        if x < intl_256 then f x else EFail tr bd).
+        if x < 256 then f x else EFail tr bd).
 
     Let eval_slot_chk v f :=
       exec_slot_chk v tr bd f.
 
-    Let inc1 x := x + intl_1.
-    Let dec1 x := x - intl_1.
+    Let inc1 x : intl := x + 1.
+    Let dec1 x : intl := x - 1.
 
     Let exec_alive_chk bd p si tr (f : intl -> eresult) :=
       alivep_rec (fun _ => _) f (EFail tr bd) (alive bd p si).
@@ -148,7 +157,7 @@ Section eval_fun.
         let bd := update_v bd p si (Some (vi - n)) in
         let tr := TraceAttackDec si n :: tr in
         exec_slot_chk j tr bd (fun sj =>
-        let n' := n * intl_of_nat 9 / intl_of_nat 10 in
+        let n' := n * 9 / 10 in
         let p' := oppp p in
         let sj' := oppsi si in
         exec_alive_chk bd p' sj' tr
@@ -166,7 +175,7 @@ Section eval_fun.
         let bd := update_v bd p si (Some (vi - n)) in
         let tr := TraceHelpDec si n :: tr in
         exec_slot_chk j tr bd (fun sj =>
-        let n' := n * intl_of_nat 11 / intl_of_nat 10 in
+        let n' := n * 11 / 10 in
         exec_alive_chk bd p sj tr
           (fun vj =>
           let bd := update_v bd p sj
@@ -178,7 +187,7 @@ Section eval_fun.
       eval_slot_chk v (fun si =>
       alivep_rec (fun _ => _)
         (fun _ => EDone ValI nil bd)
-        (let bd := update_v bd p si (Some intl_1) in
+        (let bd := update_v bd p si (Some 1) in
         let tr := TraceRevive si :: tr in
         EDone ValI tr bd)
         (alive bd p si)).
@@ -199,7 +208,7 @@ Section eval_fun.
     match vfun with
       | ValNum i => EFail tr bd
       | ValI     => done v
-      | ValSucc  => eval_intl_chk v (fun x => done (ValNum (x + intl_1)))
+      | ValSucc  => eval_intl_chk v (fun x => done (ValNum (x + 1)))
       | ValDbl   => eval_intl_chk v (fun x => done (ValNum (x + x)))
       | ValGet   => eval_slot_chk v (fun x => done (getf bd p x))
       | ValPut   => done ValI
@@ -242,24 +251,74 @@ Section eval_fun.
         end
     end.
 
+  Inductive eval_result : Set :=
+  | EvalResult : value -> list trace -> board -> eval_result.
+
   Fixpoint eval n ev tr bd :=
     match n with
-      | O => EFail tr bd
+      | O => EvalResult ValI tr bd
       | S n' =>
         match step ev tr bd with
-          | EDone _ _ _ as e => e
+          | EDone v tr bd as e => EvalResult v tr bd
           | EFound v tr' bd' => eval n' v tr' bd'
-          | EFail _ _ as e => e
+          | EFail tr bd as e => EvalResult ValI tr bd
         end
     end.
 
-  Definition v_1000 = 1000.
+  Definition v_1000 := 1000.
 
   Definition eval_app v w bd :=
     eval v_1000 (EApp (EValue v) (EValue w)) nil bd.
 
 End eval_fun.
 
+Definition value_of_card c :=
+  match c with
+    | CardI => ValI
+    | CardZero => ValNum 0
+    | CardSucc => ValSucc
+    | CardDbl => ValDbl
+    | CardGet => ValGet
+    | CardPut => ValPut
+    | CardS => ValS
+    | CardK => ValK
+    | CardInc => ValInc
+    | CardDec => ValDec
+    | CardAttack => ValAttack
+    | CardHelp => ValHelp
+    | CardCopy => ValCopy
+    | CardRevive => ValRevive
+    | CardZombie => ValZombie
+  end.
 
+Inductive exec_result : Set :=
+| ExecResult : list trace -> board -> exec_result.
 
+Definition exec_app p zombie v w bd si :=
+  match eval_app p zombie v w bd with
+    | EvalResult v tr bd =>
+      if zombie
+        then
+          ExecResult tr (update_f (update_v bd p si None) p si ValI)
+        else
+          ExecResult tr (update_f bd p si v)
+  end.
 
+Definition left_app p bd c si :=
+  exec_app p false (value_of_card c) (getf bd p si) bd si.
+
+Definition right_app p bd si c :=
+  exec_app p false (getf bd p si) (value_of_card c) bd si.
+
+Definition zombie_app p bd si :=
+  exec_app p true (getf bd p si) ValI bd si.
+
+Inductive cmd : Set :=
+| LeftApp : card -> intl -> cmd
+| RightApp: intl -> card -> cmd.
+
+Definition exec_cmd p bd cmd :=
+  match cmd with
+    | LeftApp  c si => left_app  p bd c si
+    | RightApp si c => right_app p bd si c
+  end.

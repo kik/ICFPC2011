@@ -1,7 +1,8 @@
 open Format
+open Ltgcore
 open Ltg
 
-let board = make_board ()
+let board = make_cboard ()
 
 let () = Printf.printf "hello, world!\n"
 
@@ -16,20 +17,20 @@ let optcard_of_str s =
   with Not_found -> None
 
 let do_left_app player c i =
-  printf "APply: %s %d\n@." (str_of_card c) i;
-  let res = left_app player board c i in
-  printf "Result: %a@." format_result res
+  printf "Apply: %s %d\n@." (str_of_card c) i;
+  let res = exec_cmd player board (LeftApp(c, i)) in
+  printf "Result: %a@." format_trace_list res
 
 let do_right_app player i c =
-  printf "APply %d %s\n@." i (str_of_card c);
-  let res = right_app player board i c in
-  printf "Result: %a@." format_result res
+  printf "Apply %d %s\n@." i (str_of_card c);
+  let res = exec_cmd player board (RightApp(i, c)) in
+  printf "Result: %a@." format_trace_list res
 
 let play_turn turn player =
-  printf "turn(%d, %d):\n@." turn player;
-  printf "slots=\n@[<hov 2>%a@]@\n@." format_slots board.(player);
-  zombie_turn player board (fun i res ->
-    printf "zombie(%d)\n  %a@." i format_result res);
+  printf "turn(%d, %d):\n@." turn (int_of_player player);
+  printf "slots=\n@[<hov 2>%a@]@\n@." format_slots board.(int_of_player player);
+  zombie_turn player board (fun i tr _ ->
+    printf "zombie(%d)\n  %a@." i format_trace_list tr);
   let rec f () =
     try
       printf "?\n@.";
@@ -50,7 +51,6 @@ let play_turn turn player =
 
 let () =
   for turn = 1 to 100000 do
-    for player = 0 to 1 do
-      play_turn turn player
-    done
+    play_turn turn Player0;
+    play_turn turn Player1
   done

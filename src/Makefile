@@ -1,5 +1,8 @@
 
-LIB_SOURCES = ltg.ml ltgext.ml
+OCAMLBCFLAGS = -g
+OCAMLBLDFLAGS = -g
+
+LIB_SOURCES = ax.ml ltgcore.ml ltg.ml #ltgext.ml
 
 SOURCES = $(LIB_SOURCES) play.ml
 RESULT = play

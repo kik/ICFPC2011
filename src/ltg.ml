@@ -1,9 +1,6 @@
 open List
 open Format
-
-type card =
-  | CardI | CardZero | CardSucc | CardDbl | CardGet | CardPut | CardS | CardK | CardInc | CardDec
-  | CardAttack | CardHelp | CardCopy | CardRevive | CardZombie
+open Ltgcore
 
 let strof_card_alist = [
   CardI, "I";
@@ -30,31 +27,6 @@ let card_of_str s =
   let x = find (fun (_, t) -> s = t) strof_card_alist in
   fst x
 
-type value =
-  | ValNum of int
-  | ValI
-  | ValSucc
-  | ValDbl
-  | ValGet
-  | ValPut
-  | ValS
-  | ValSf of value
-  | ValSfg of value * value
-  | ValK
-  | ValKx of value
-  | ValInc
-  | ValDec
-  | ValAttack
-  | ValAttacki of value
-  | ValAttackij of value * value
-  | ValHelp
-  | ValHelpi of value
-  | ValHelpij of value * value
-  | ValCopy
-  | ValRevive
-  | ValZombie
-  | ValZombiei of value
-
 let rec format_value pp v = match v with
   | ValNum(n) -> fprintf pp "(%d)" n
   | ValI -> fprintf pp "I"
@@ -80,16 +52,6 @@ let rec format_value pp v = match v with
   | ValZombie -> fprintf pp "zombie"
   | ValZombiei(i) -> fprintf pp "zombie(%a)" format_value i
 
-type trace =
-  | TraceInc of bool * int
-  | TraceDec of bool * int
-  | TraceAttackDec of int * int
-  | TraceAttack of bool * int * int
-  | TraceHelpDec of int * int
-  | TraceHelp of bool * int * int
-  | TraceRevive of int
-  | TraceZombie of int * value
-
 let format_trace pp t = match t with
   | TraceInc(z, i) -> fprintf pp "TraceInc(%B, %d)" z i
   | TraceDec(z, i) -> fprintf pp "TraceDec(%B, %d)" z i
@@ -105,39 +67,50 @@ let format_trace_list pp ts =
 
 type slot = {
   mutable field : value;
-  mutable vitality : int;
+  mutable vitality : int option;
 }
 
 type slots = slot array
-type board = slots array
+type cboard = slots array
+
+let format_vitality pp v =
+  match v with
+    | Some v -> fprintf pp "%d" v
+    | None -> fprintf pp "-1"
 
 let format_slots pp ss =
   Array.iteri (fun i s ->
-    if s.field <> ValI || s.vitality <> 10000 then
-      fprintf pp "[%d, %a, %d]@," i format_value s.field s.vitality) ss
+    if s.field <> ValI || s.vitality <> Some 10000 then
+      fprintf pp "[%d, %a, %a]@," i format_value s.field format_vitality s.vitality) ss
 
-let make_board () =
+let make_cboard () : cboard =
   Array.init 2 (fun _ ->
     Array.init 256 (fun i ->
-      { field = ValI; vitality = 10000 }))
+      { field = ValI; vitality = Some 10000 }))
 
-let value_of_card c =
-  match c with
-  | CardI -> ValI
-  | CardZero -> ValNum 0
-  | CardSucc -> ValSucc
-  | CardDbl -> ValDbl
-  | CardGet -> ValGet
-  | CardPut -> ValPut
-  | CardS -> ValS
-  | CardK -> ValK
-  | CardInc -> ValInc
-  | CardDec -> ValDec
-  | CardAttack -> ValAttack
-  | CardHelp -> ValHelp
-  | CardCopy -> ValCopy
-  | CardRevive -> ValRevive
-  | CardZombie -> ValZombie
+let int_of_player p =
+  match p with
+    | Player0 -> 0
+    | Player1 -> 1
+
+let cboard_getf cbd p si =
+  cbd.(int_of_player p).(si).field
+
+let cboard_getv cbd p si =
+  cbd.(int_of_player p).(si).vitality
+
+let board_of_cboard cbd = { getf = cboard_getf cbd; getv = cboard_getv cbd }
+
+let cboard_update cbd bd =
+  for si = 0 to 255 do
+    cbd.(0).(si).field    <- getf bd Player0 si;
+    cbd.(0).(si).vitality <- getv bd Player0 si;
+    cbd.(1).(si).field    <- getf bd Player1 si;
+    cbd.(1).(si).vitality <- getv bd Player1 si
+  done
+
+
+(*
 
 type eval_result =
   | ResultValue of int * trace list * value
@@ -322,28 +295,38 @@ let right_app player board x c =
   let res = eval_app player false board s.field (value_of_card c) in
   update_slot s res
 
-let zombie_turn player board f =
-  for i = 0 to 255 do
-    let s = board.(player).(i) in
-    if s.vitality = -1 then
-      let res = eval_app player true board s.field ValI in
-      f i res
+*)
+
+let zombie_turn p cbd f =
+  for si = 0 to 255 do
+    let bd = board_of_cboard cbd in
+    if getv bd p si = None then
+      match zombie_app p bd si with
+	| ExecResult(tr, bd) ->
+	  cboard_update cbd bd;
+	  f si tr bd
   done
 
 let turn_iter f =
   for t = 1 to 100000 do
-    for p = 0 to 1 do
-      f p t
-    done
+    f Player0 t;
+    f Player1 t
   done
 
 type cmd =
   | LeftApp of card * int
   | RightApp of int * card
 
-let exec_cmd player board cmd = match cmd with
-  | LeftApp(c, i) -> (* eprintf "%a@." format_result *) ignore (left_app player board c i)
-  | RightApp(i, c) -> (* eprintf "%a@." format_result *) ignore (right_app player board i c)
+let exec_cmd player cbd cmd =
+  let bd = board_of_cboard cbd in
+  let res = match cmd with
+    | LeftApp(c, i)  -> left_app player bd c i
+    | RightApp(i, c) -> right_app player bd i c
+  in
+  match res with
+    | ExecResult(tr, bd) ->
+      cboard_update cbd bd;
+      tr
 
 let write_cmd cmd = match cmd with
   | LeftApp(c, i) -> Printf.printf "1\n%s\n%d\n" (str_of_card c) i; flush_all ()
@@ -362,8 +345,8 @@ let read_cmd () =
 
 let run_main main =
   let v = Sys.argv.(1) in
-  let board = make_board () in
-  main (if v = "0" then 0 else 1) board
+  let board = make_cboard () in
+  main (if v = "0" then Player0 else Player1) board
 
 let run_simple_main simple_main =
   run_main (fun player board ->
@@ -374,7 +357,7 @@ let run_simple_main simple_main =
 	else
 	  read_cmd ()
       in
-      zombie_turn p board (fun i res -> ());
+      zombie_turn p board (fun _ _ _ -> ());
       exec_cmd p board c))
 
 let run_solitaire_main lis =
