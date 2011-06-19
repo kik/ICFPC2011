@@ -5,8 +5,11 @@ Class monad (M : Type -> Type) := {
   mbind : forall {A B}, M A -> (A -> M B) -> M B
 }.
 
-Notation "x >>= f" := (mbind x f) (at level 42, left associativity).
-Notation "x >> y" := (mbind x (fun _ => y)) (at level 42, left associativity).
+Notation "x >>= f" := (mbind x f) (at level 42, left associativity) : monad_scope.
+Notation "x >> y" := (mbind x (fun _ => y)) (at level 42, left associativity) : monad_scope.
+
+Open Scope monad_scope.
+Delimit Scope monad_scope with m.
 
 Record statei : Set := {
   sti_player : player;
@@ -21,6 +24,8 @@ Inductive cmdex : Type -> Type :=
 | ExState : cmdex statei
 | ExReturn {A} : A -> cmdex A
 | ExBind {A B} : cmdex A -> (A -> cmdex B) -> cmdex B.
+
+Bind Scope monad_scope with cmdex.
 
 Instance cmdex_monad : monad cmdex := {
   mreturn := @ExReturn;
@@ -40,64 +45,81 @@ Definition is x st :=
 Definition is_I := is ValI.
 Definition is_zero := is (ValNum 0).
 
+Definition il		:= l CardI.
+Definition zerol	:= l CardZero.
+Definition succl	:= l CardSucc.
+Definition dbll		:= l CardDbl.
+Definition getl		:= l CardGet.
+Definition putl		:= l CardPut.
+Definition sl		:= l CardS.
+Definition kl		:= l CardK.
+Definition incl		:= l CardInc.
+Definition decl		:= l CardDec.
+Definition attackl	:= l CardAttack.
+Definition helpl	:= l CardHelp.
+Definition copyl	:= l CardCopy.
+Definition revivel	:= l CardRevive.
+Definition zombiel	:= l CardZombie.
+
+Definition ir		:= r CardI.
+Definition zeror	:= r CardZero.
+Definition succr	:= r CardSucc.
+Definition dblr		:= r CardDbl.
+Definition getr		:= r CardGet.
+Definition putr		:= r CardPut.
+Definition sr		:= r CardS.
+Definition kr		:= r CardK.
+Definition incr		:= r CardInc.
+Definition decr		:= r CardDec.
+Definition attackr	:= r CardAttack.
+Definition helpr	:= r CardHelp.
+Definition copyr	:= r CardCopy.
+Definition reviver	:= r CardRevive.
+Definition zombier	:= r CardZombie.
+
 (* X <- I *)
 Definition clear :=
   if_sti is_I nop (zerol).
 
 Definition p c :=
-  if_sti is (value_of_card c) then nop else clear >> r c.
+  if_sti (is (value_of_card c)) nop (clear >> r c).
 
-Definition il := l CardI.
-Definition ir := r CardI.
-Definition zerol := l CardZero.
-Definition zeror := r CardZero.
-Definition zerop := p CardZero.
-Definition succl := l CardSucc.
-Definition succr := r CardSucc.
-Definition succp := p CardSucc.
-Definition dbll := l CardDbl.
-Definition dblr := r CardDbl.
-Definition dblp := p CardDbl.
-Definition getl := l CardGet.
-Definition getr := r CardGet.
-Definition getp := p CardGet.
-Definition putl := l CardPut.
-Definition putr := r CardPut.
-Definition putp := p CardPut.
-Definition sl := l CardS.
-Definition sr := r CardS.
-Definition sp := p CardS.
-Definition kl := l CardK.
-Definition kr := r CardK.
-Definition kp := p CardK.
-Definition incl := l CardInc.
-Definition incr := r CardInc.
-Definition incp := p CardInc.
-Definition decl := l CardDec.
-Definition decr := r CardDec.
-Definition decp := p CardDec.
-Definition attackl := l CardAttack.
-Definition attackr := r CardAttack.
-Definition attackp := p CardAttack.
-Definition helpl := l CardHelp.
-Definition helpr := r CardHelp.
-Definition helpp := p CardHelp.
-Definition copyl := l CardCopy.
-Definition copyr := r CardCopy.
-Definition copyp := p CardCopy.
-Definition revivel := l CardRevive.
-Definition reviver := r CardRevive.
-Definition revivep := p CardRevive.
-Definition zombiel := l CardZombie.
-Definition zombier := r CardZombie.
-Definition zombiep := p CardZombie.
+Definition ip		:= p CardI.
+Definition zerop	:= p CardZero.
+Definition succp	:= p CardSucc.
+Definition dblp		:= p CardDbl.
+Definition getp		:= p CardGet.
+Definition putp		:= p CardPut.
+Definition sp		:= p CardS.
+Definition kp		:= p CardK.
+Definition incp		:= p CardInc.
+Definition decp		:= p CardDec.
+Definition attackp	:= p CardAttack.
+Definition helpp	:= p CardHelp.
+Definition copyp	:= p CardCopy.
+Definition revivep	:= p CardRevive.
+Definition zombiep	:= p CardZombie.
 
 (* X <- S (K X) *)
 Definition sk := kl >> sl.
 (* X <- fun x -> X (c x) *)
 Definition comp c := sk >> r c.
-(* X <- X (c0 c1) *)
-Definition appapp c0 c1 := comp c0 >> r c1.
+
+Definition ic		:= comp CardI.
+Definition zeroc	:= comp CardZero.
+Definition succc	:= comp CardSucc.
+Definition dblc		:= comp CardDbl.
+Definition getc		:= comp CardGet.
+Definition putc		:= comp CardPut.
+Definition sc		:= comp CardS.
+Definition kc		:= comp CardK.
+Definition incc		:= comp CardInc.
+Definition decc		:= comp CardDec.
+Definition attackc	:= comp CardAttack.
+Definition helpc	:= comp CardHelp.
+Definition copyc	:= comp CardCopy.
+Definition revivec	:= comp CardRevive.
+Definition zombiec	:= comp CardZombie.
 
 (* X <- 1 *)
 Definition onep :=
@@ -111,30 +133,24 @@ Definition num n := match n with
   | _ -> assert false (* TODO *)
 *)
 
-Definition reg0 := zero >> l CardGet.
+Definition reg0p := zerop >> l CardGet.
 
 (* X <- X (get 0) *)
-Definition rreg0 := appapp CardGet CardZero.
+Definition reg0r := getc >> zeror.
 (* X <- X (get 1) *)
-Definition rreg1 := comp CardGet >> appapp CardSucc CardZero.
+Definition reg1r := getc >> succc >> zeror.
 (* X <- X (get (get 0)) *)
-Definition rind  := comp CardGet >> appapp CardGet CardZero.
+Definition indr  := getc >> getc >> zeror.
 (* X <- lazy X *)
-Definition laz := kl.
+Definition lazl := kl.
 (* X <- fun (lazy y) -> lazy (x y) / lazy x := X *)
-Definition lapX := sl.
-(* X <- lazy (x 0) / lazy x := X *)
-Definition lap0 := lapX >> appapp CardK CardZero.
-(* X <- lazy (x 1) / lazy x := X *)
-Definition lap1 := lapX >> comp CardK >> appapp CardSucc CardZero.
-(* X <- lazy (x y) / lazy x := X; y := get 0 *)
-Definition lapreg0 := lapX >> comp CardK >> rreg0.
-(* X <- lazy (x y) / lazy x := X; lazy y := get 0 *)
-Definition laplreg0 := lapX >> rreg0.
-(* X <- lazy (x y) / lazy x := X; y := get (get 0) *)
-Definition lapind := lapX >> comp CardK >> rind.
-(* X <- lazy (x y) / lazy x := X; lazy y := get (get 0) *)
-Definition laplind := lapX >> rind.
+Definition lapp := sl.
+
+Definition laz0r := kc >> zeror.
+Definition laz1r := kc >> succc >> zeror.
+Definition lazreg0r := kc >> reg0r.
+Definition lapindr := kc >> indr.
+Definition lseq := sk.
 
 Record state : Set := {
   st_player : player;
@@ -152,6 +168,8 @@ Instance aicmd_monad : monad aicmd := {
   mreturn := @AiReturn;
   mbind := @AiBind
 }.
+
+Bind Scope monad_scope with aicmd.
 
 Definition ainop := AiNop.
 Definition arun := AiRunAt.

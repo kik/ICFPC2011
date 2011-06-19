@@ -26,6 +26,8 @@ Extract Constant intl_ge => "Ax.intl_ge".
 Extract Constant intl_lt => "Ax.intl_lt".
 Extract Constant intl_gt => "Ax.intl_gt".
 
-Extraction "../ltgcore.ml"
-  left_app right_app zombie_app exec_cmd
-  if_sti lapind run_ai.
+Require Import MonadKamaboko.
+
+Extraction "../ltgcore.ml" exec_cmd.
+
+Extraction "../ai/monadkamaboko/ltgcore.ml" kamaboko_main run_ai.

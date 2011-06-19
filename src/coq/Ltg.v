@@ -243,7 +243,7 @@ Section eval_fun.
           | EFound v1' tr bd' => EFound (EApp v0 v1') tr bd'
           | EFail tr bd' as e => e
         end
-      | EApp ((EApp _ _) as v0) v1 =>
+      | EApp ((EApp _ _) as v0) ((EValue _) as v1) =>
         match step v0 tr bd with
           | EDone  v0' tr bd' => EFound (EApp (EValue v0') v1) tr bd'
           | EFound v0' tr bd' => EFound (EApp v0' v1) tr bd'
