@@ -1,6 +1,6 @@
 open Printf
-open Ltgcore
 open Ltg
+open Ltglib
 
 
 let kamaboko_solitaire_main =

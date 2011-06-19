@@ -320,7 +320,6 @@ let format_cmd pp cmd =
 
 let exec_cmd player cbd cmd =
   let bd = board_of_cboard cbd in
-  eprintf "** [%a]@." format_cmd cmd;
   let res = exec_cmd player bd cmd in
   match res with
     | ExecResult(tr, bd) ->
@@ -352,6 +351,7 @@ let run_simple_main simple_main =
     turn_iter (fun p turn ->
       let c = if player = p then
 	  let c = simple_main player board turn in
+	  eprintf "** [%a]@." format_cmd c;
 	  write_cmd c; c
 	else
 	  read_cmd ()

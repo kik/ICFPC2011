@@ -1,4 +1,4 @@
-Require Import Arith Ax Ltg Ltgmonad Interpreter.
+Require Import Arith Ax Ltg Ltgmonad Ltgmonadlib Interpreter.
 
 Open Scope intl_scope.
 Open Scope monad_scope.
@@ -45,6 +45,6 @@ Definition kamaboko : aicmd unit :=
   iter_nat n500 (aicmd unit) (fun x =>
     x >>
     arun 1 ir >>
-    arun 0 succr) ainop.
+    arun 0 succl) ainop.
 
 Definition kamaboko_main := run_ai_main kamaboko.

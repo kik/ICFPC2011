@@ -86,6 +86,9 @@ PP:=-pp "$(CAMLP4BIN)$(CAMLP4)o -I . $(COQSRCLIBS) $(CAMLP4EXTEND) $(GRAMMARS) $
 VFILES:=Ax.v\
   Ltg.v\
   Ltgmonad.v\
+  Ltgmonadlib.v\
+  Ltgextra.v\
+  LtgAll.v\
   ExtractInts.v\
   Extract.v\
   Interpreter.v\

@@ -5,9 +5,9 @@ LIBDIRS = ../..
 OCAMLBCFLAGS = -g
 OCAMLBLDFLAGS = -g
 
-SOURCES = monadKamaboko.mli monadKamaboko.ml
+SOURCES = kamaboko.ml
 LIBS = libltg
-RESULT = monadKamaboko
+RESULT = kamaboko
 
 BCSUFFIX = _bc
 NCSUFFIX = _nc

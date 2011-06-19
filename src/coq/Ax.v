@@ -1,4 +1,5 @@
 Axiom intl : Set.
+Axiom arr : Type -> Type.
 
 Axiom intl_max : intl.
 Axiom intl_of_nat : nat -> intl.
@@ -12,6 +13,9 @@ Axiom intl_le : intl -> intl -> bool.
 Axiom intl_ge : intl -> intl -> bool.
 Axiom intl_lt : intl -> intl -> bool.
 Axiom intl_gt : intl -> intl -> bool.
+
+Axiom make_arr : forall {T}, intl -> (intl -> T) -> arr T.
+Axiom aref : forall {T}, arr T -> intl -> T.
 
 Delimit Scope intl_scope with i.
 Bind Scope intl_scope with intl.
