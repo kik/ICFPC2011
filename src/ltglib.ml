@@ -1,6 +1,6 @@
 open List
 open Format
-open Ltgcore
+open Ltg
 
 let strof_card_alist = [
   CardI, "I";
@@ -313,16 +313,15 @@ let turn_iter f =
     f Player1 t
   done
 
-type cmd =
-  | LeftApp of card * int
-  | RightApp of int * card
+let format_cmd pp cmd =
+  match cmd with
+    | LeftApp(c, i) -> fprintf pp "l %s %d" (str_of_card c) i
+    | RightApp(i, c) -> fprintf pp "r %d %s" i (str_of_card c)
 
 let exec_cmd player cbd cmd =
   let bd = board_of_cboard cbd in
-  let res = match cmd with
-    | LeftApp(c, i)  -> left_app player bd c i
-    | RightApp(i, c) -> right_app player bd i c
-  in
+  eprintf "** [%a]@." format_cmd cmd;
+  let res = exec_cmd player bd cmd in
   match res with
     | ExecResult(tr, bd) ->
       cboard_update cbd bd;

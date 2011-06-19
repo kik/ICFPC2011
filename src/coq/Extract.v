@@ -2,6 +2,7 @@ Require Import List.
 Require Import Ax.
 Require Import Ltg.
 Require Import Ltgmonad.
+Require Import Interpreter.
 
 Extraction Language Ocaml.
 Extract Inductive unit => "unit" [ "()" ].
@@ -26,8 +27,18 @@ Extract Constant intl_ge => "Ax.intl_ge".
 Extract Constant intl_lt => "Ax.intl_lt".
 Extract Constant intl_gt => "Ax.intl_gt".
 
+Extract Constant run_ai_main => "Interpreter.run_ai_main".
+
+Require Import Wf_nat.
 Require Import MonadKamaboko.
 
-Extraction "../ltgcore.ml" exec_cmd.
+Cd "..".
+Extraction Library Ltg.
+Extraction Library Ltgmonad.
 
-Extraction "../ai/monadkamaboko/ltgcore.ml" kamaboko_main run_ai.
+Cd "ai/monadkamaboko".
+
+Extraction "wf_nat.ml" iter_nat.
+Extraction Library MonadKamaboko.
+
+Cd "../../coq".

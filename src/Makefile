@@ -2,33 +2,19 @@
 OCAMLBCFLAGS = -g
 OCAMLBLDFLAGS = -g
 
-LIB_SOURCES = ax.ml ltgcore.ml ltg.ml #ltgext.ml
+SOURCES = ax.ml ltg.mli ltg.ml ltgmonad.mli ltgmonad.ml ltglib.ml interpreter.ml
+RESULT = libltg
 
-SOURCES = $(LIB_SOURCES) play.ml
-RESULT = play
+all: coqdir bcl ncl aidir
 
-define PROJ_qb
-SOURCES = $(LIB_SOURCES) qb.ml
-RESULT = qb
-endef
-export PROJ_qb
+coqdir:
+	make -C coq
 
-define PROJ_kamaboko
-SOURCES = $(LIB_SOURCES) kamaboko.ml
-RESULT = kamaboko
-endef
-export PROJ_kamaboko
-
-ifndef SUBPROJS
-export SUBPROJS = play qb kamaboko
-endif
-
-all: bc
+aidir:
+	make -C ai/monadkamaboko
 
 -include OCamlMakefile
 
-
-%:
-	@make -f $(OCAMLMAKEFILE) subprojs SUBTARGET=$@
-
-
+clean::
+	make -C coq clean
+	make -C ai/monadkamaboko clean

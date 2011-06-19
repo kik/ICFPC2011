@@ -264,6 +264,3 @@ Definition run_ai_result := run_ai_resut_aux unit.
 Definition run_ai p bd (ai : aicmd unit) : run_ai_result :=
   let st := Build_state p bd in
   run_ai_aux (hnf_ai st ai).
-
-
-

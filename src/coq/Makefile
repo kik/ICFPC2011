@@ -88,6 +88,7 @@ VFILES:=Ax.v\
   Ltgmonad.v\
   ExtractInts.v\
   Extract.v\
+  Interpreter.v\
   MonadKamaboko.v
 VOFILES:=$(VFILES:.v=.vo)
 VOFILES0:=$(filter-out ,$(VOFILES))
