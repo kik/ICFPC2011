@@ -113,6 +113,9 @@ Section eval_fun.
 
     Let done x := EDone x nil bd.
 
+    Let intl_limit si :=
+      if si < 0 then 0 else if si > intl_max then intl_max else si.
+
     Let exec_intl_chk v tr bd f :=
       match v with
         | ValNum i => f i
@@ -139,7 +142,7 @@ Section eval_fun.
       eval_slot_chk v (fun si =>
       exec_alive_chk bd p si tr (fun v =>
       EDone ValI (TraceInc zombie si::tr) (
-        update_v bd p si (if zombie then Some (dec1 v) else (Some (inc1 v)))))).
+        update_v bd p si (Some (intl_limit (if zombie then dec1 v else inc1 v)))))).
 
     Let exec_dec :=
       eval_slot_chk v (fun si' =>
@@ -147,14 +150,14 @@ Section eval_fun.
       let p' := oppp p in
       exec_alive_chk bd p' si tr (fun v =>
       EDone ValI (TraceDec zombie si::tr) (
-        update_v bd p' si (if zombie then Some (inc1 v) else (Some (dec1 v)))))).
+        update_v bd p' si (Some (intl_limit (if zombie then inc1 v else dec1 v)))))).
 
     Let exec_attack i j :=
       eval_slot_chk i (fun si =>
       eval_intl_chk v (fun n =>
       exec_alive_chk bd p si tr
         (fun vi => if vi < n then EFail nil bd else
-        let bd := update_v bd p si (Some (vi - n)) in
+        let bd := update_v bd p si (Some (intl_limit (vi - n))) in
         let tr := TraceAttackDec si n :: tr in
         exec_slot_chk j tr bd (fun sj =>
         let n' := n * 9 / 10 in
@@ -163,7 +166,7 @@ Section eval_fun.
         exec_alive_chk bd p' sj' tr
           (fun vj =>
           let bd := update_v bd p' sj'
-            (Some (if zombie then vj + n' else vj - n')) in
+            (Some (intl_limit (if zombie then vj + n' else vj - n'))) in
           let tr := TraceAttack zombie sj' n :: tr in
           EDone ValI tr bd))))).
 
@@ -179,7 +182,7 @@ Section eval_fun.
         exec_alive_chk bd p sj tr
           (fun vj =>
           let bd := update_v bd p sj
-            (Some (if zombie then vj - n' else vj + n')) in
+            (Some (intl_limit (if zombie then vj - n' else vj + n'))) in
           let tr := TraceHelp zombie sj n :: tr in
           EDone ValI tr bd))))).
 

@@ -1,4 +1,4 @@
-Require Import Ax Ltg Ltgmonad Interpreter.
+Require Import LtgAll.
 
 Definition sample_boad :=
   Build_board (fun _ _ => ValI) (fun _ _ => Some intl_max).
@@ -35,6 +35,9 @@ Eval hnf in sample_run_ai (ainop >> arun 0 nop).
 Eval hnf in sample_run_ai (ainop >> arun 0 zerop).
 Eval hnf in sample_run_ai (arun 0 zerop >> arun 0 zerop).
 
+Check (AiReturn true >>= (fun x => AiReturn x)).
+Check (x <- AiReturn true;; AiReturn x).
+Check (x <- AiReturn true;; (if x : bool then AiReturn tt else ainop)).
 
 
 

@@ -91,8 +91,11 @@ VFILES:=Ax.v\
   LtgAll.v\
   ExtractInts.v\
   Extract.v\
+  ExtractLib.v\
+  ExtractAi.v\
   Interpreter.v\
-  MonadKamaboko.v
+  MonadKamaboko.v\
+  AiAnko.v
 VOFILES:=$(VFILES:.v=.vo)
 VOFILES0:=$(filter-out ,$(VOFILES))
 GLOBFILES:=$(VFILES:.v=.glob)

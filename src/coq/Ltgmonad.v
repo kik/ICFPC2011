@@ -42,7 +42,10 @@ Inductive aicmd : Type -> Type :=
 | AiRunAt : intl -> cmdex unit -> aicmd unit
 | AiState : aicmd state
 | AiReturn {A} : A -> aicmd A
-| AiBind {A B} : aicmd A -> (A -> aicmd B) -> aicmd B.
+| AiBind {A B} : aicmd A -> (A -> aicmd B) -> aicmd B
+| AiNew {T} : T -> aicmd (ptr T)
+| AiRead {T} : ptr T -> aicmd T
+| AiWrite {T} : ptr T -> T -> aicmd unit.
 
 Instance aicmd_monad : monad aicmd := {
   mreturn := @AiReturn;
@@ -80,6 +83,9 @@ Fixpoint hnf_ai {A} st ai : aicmd A :=
           | AiReturn _ v => fun f _ => f v
           | AiRunAt si cmd => fun _ f => AiRunAt si cmd >>= f
           | AiBind _ _ c g => fun _ f => AiBind c g >>= f
+          | AiNew _ v => fun f _ => f (make_ptr v)
+          | AiRead _ p => fun f _ => f (read_ptr p)
+          | AiWrite _ p v => fun f _ => f (write_ptr p v)
         end (fun x => hnf_ai st (f x)) f
     | AiNop => AiNop
     | AiRunAt si cmd =>
@@ -91,6 +97,9 @@ Fixpoint hnf_ai {A} st ai : aicmd A :=
         end
     | AiState => AiState
     | AiReturn _ v => AiReturn v
+    | AiNew _ v => AiNew v
+    | AiRead _ p => AiRead p
+    | AiWrite _ p v => AiWrite p v
   end.
 
 Inductive run_cmd_result_aux (A : Type) : Type :=
@@ -129,6 +138,9 @@ Fixpoint run_ai_aux {A} (ai : aicmd A) : run_ai_resut_aux A :=
     | AiNop => RAIResult _ junk AiNop
     | AiState => RAIResult _ junk AiState
     | AiReturn B v => RAIResult _ junk (AiReturn v)
+    | AiNew _ v => RAIResult _ junk (AiNew v)
+    | AiRead _ p => RAIResult _ junk (AiRead p)
+    | AiWrite _ p v => RAIResult _ junk (AiWrite p v)
   end.
 
 Definition run_ai_result := run_ai_resut_aux unit.

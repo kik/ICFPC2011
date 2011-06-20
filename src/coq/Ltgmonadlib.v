@@ -1,4 +1,4 @@
-Require Import Arith Ax Ltg Ltgmonad.
+Require Import Arith ZArith Ax Ltg Ltgmonad.
 
 Open Scope intl_scope.
 Open Scope monad_scope.
@@ -6,6 +6,11 @@ Open Scope monad_scope.
 Definition nop := ExNop.
 Definition l c := ExLeft c.
 Definition r c := ExRight c.
+
+Definition ifb_then_else {A T} {M : monad T} (f : T bool) (g h : T A) : T A :=
+  f >>= (fun t : bool, if t then g else h).
+
+Notation "'ifb' x 'then' y 'else' z" := (ifb_then_else x y z) (at level 200, right associativity).
 
 Definition if_sti {A} (f : statei -> bool) (g h : cmdex A) :=
   ExState >>= (fun st => if f st then g else h).
@@ -107,6 +112,7 @@ Definition num n := match n with
 *)
 
 Definition reg0p := zerop >> l CardGet.
+Definition reg1p := onep >> l CardGet.
 
 (* X <- X (get 0) *)
 Definition reg0r := getc >> zeror.
@@ -134,8 +140,22 @@ Definition if_st {A} (f : state -> bool) (g h : aicmd A) :=
 Notation "'ifst' x 'then' y 'else' z" := (if_st x y z) (at level 200, right associativity).
 
 Notation "'ret' x" := (mreturn x) (at level 75) : monad_scope.
-Notation "x <- y ;; z" := (mbind y (fun x => z)) (right associativity, at level 84, y at next level) : monad_scope.
-Notation "x ; y" := (mbind x (fun _ => y)) (right associativity, at level 84) : monad_scope.
+Notation "x <- y ; z" := (mbind y (fun x => z)) (right associativity, at level 84, y at next level) : monad_scope.
+Notation "x ;; y" := (mbind x (fun _ => y)) (right associativity, at level 84) : monad_scope.
 
 Definition rep {M} {H : monad M} n (x : M unit) : M unit :=
-  iter_nat n _ (fun y => y >> x) x.
+  iter_nat n _ (fun y => y >> x) (mreturn tt).
+
+Fixpoint const_intl_sub (p : positive) :=
+  match p with
+    | xI p' => 2 * const_intl_sub p' + 1
+    | xO p' => 2 * const_intl_sub p'
+    | xH => 1
+  end.
+
+Definition const_intl (n : Z) : intl :=
+  match n with
+    | Z0 => 0
+    | Zpos p => const_intl_sub p
+    | Zneg p => 0 - const_intl_sub p
+  end.

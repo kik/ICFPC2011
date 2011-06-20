@@ -1,11 +1,10 @@
 type nat = O | S of nat
 
 type intl = int
+type 't arr = 't array
+type 't ptr = 't ref
 
 let intl_max = 65535
-
-let intl_limit n =
-  if n < 0 then 0 else if n > intl_max then intl_max else n
 
 (** val intl_of_nat : Ax.nat -> intl **)
 
@@ -16,19 +15,19 @@ let rec intl_of_nat n =
 
 (** val intl_add : intl -> intl -> intl **)
 
-let intl_add x y = intl_limit (x + y)
+let intl_add x y = x + y
 
 (** val intl_sub : intl -> intl -> intl **)
 
-let intl_sub x y = intl_limit (x - y)
+let intl_sub x y = x - y
 
 (** val intl_mul : intl -> intl -> intl **)
 
-let intl_mul x y = intl_limit (x * y)
+let intl_mul x y = x * y
 
 (** val intl_div : intl -> intl -> intl **)
 
-let intl_div x y = intl_limit (x / y)
+let intl_div x y = x / y
 
 (** val intl_eq : intl -> intl -> bool **)
 
@@ -42,6 +41,9 @@ let intl_lt (x : intl) (y : intl) = x < y
 (** val intl_gt : intl -> intl -> bool **)
 
 let intl_gt (x : intl) (y : intl) = x > y
+
+let intl_le (x : intl) (y : intl) = x <= y
+let intl_ge (x : intl) (y : intl) = x >= y
 
 
 let intl_0 = 0

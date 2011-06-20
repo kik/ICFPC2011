@@ -1,6 +1,7 @@
 Require Import List.
 Require Import LtgAll.
 Require Import Wf_nat.
+Require Import BinInt.
 
 Extraction Language Ocaml.
 Extract Inductive unit => "unit" [ "()" ].
@@ -11,7 +12,8 @@ Extract Inductive option => "option" [ "Some" "None" ].
 Extract Inductive list => "list" [ "[]" "(::)" ].
 
 Extract Constant intl => "Ax.intl".
-Extract Constant arr "t" => " 't array ".
+Extract Constant arr "'t" => " Ax.arr ".
+Extract Constant ptr "'t" => " Ax.ptr ".
 Require Import ExtractInts.
 Extract Constant intl_max => "Ax.intl_max".
 Extract Constant intl_eq_dec => "Ax.intl_eq_dec".
@@ -27,25 +29,11 @@ Extract Constant intl_lt => "Ax.intl_lt".
 Extract Constant intl_gt => "Ax.intl_gt".
 Extract Constant make_arr => "Array.init".
 Extract Constant aref => "Array.get".
+Extract Constant make_ptr => "ref".
+Extract Constant read_ptr => "(!)".
+Extract Constant write_ptr => "(:=)".
+
+Extraction Inline arr ptr make_arr aref make_ptr read_ptr write_ptr.
 
 Extract Constant run_ai_main => "Interpreter.run_ai_main".
 
-Require Import MonadKamaboko.
-Require Import AiAnko.
-
-Cd "..".
-Extraction Library Ltg.
-Extraction Library Ltgmonad.
-Extraction Library Ltgmonadlib.
-Extraction Library Ltgextra.
-Extraction "wf_nat.ml" iter_nat.
-
-Cd "ai/monadkamaboko".
-
-Extraction Library MonadKamaboko.
-
-Cd "../anko".
-
-Extraction Library AiAnko.
-
-Cd "../../coq".

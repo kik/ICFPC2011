@@ -47,6 +47,9 @@ Sapp x y = S (x y)
 comp x y z = x (y z)
         comp = Sapp K
 
+rev x y = y x
+        = SI(Kx)y
+
 [0] x y = y
       	[0] = P
 
@@ -56,8 +59,21 @@ comp x y z = x (y z)
 [2] x y = x (x y)
         [2] = S(comp)I
 
+[INC] x f y = x f (f y)
+            = S x comp f y
+            = f (x f y)
+            = S comp x f y
 [PLUS] x y z w = x z (y z w)
         [PLUS] = Sapp(S(K(comp)))
 
 [MULT] x y z = x (y z)
         [MULT] = comp
+
+[POW x y] x y = y x = x^y
+
+f (lazy x) = S (K (lazy x)) (lazy x)
+
+s d s d 0 = 3
+s d s d s d 0 = 7
+(s d)^4 0 = 15
+(s d)^8 0 = 255
