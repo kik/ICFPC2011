@@ -16,5 +16,6 @@ construct AIs.
 TODO
 * certify interpretter.
 * separate side effect of aicmd for test run.
+* hide operations of "ptr" type in monad properly.
 * separate monad interface in other library to construct a more generic
   programming enviromnent.
