@@ -1,0 +1,20 @@
+ICFPC 2011 Lambda The Gathering by Coq an OCaml
+
+submitted version is https://github.com/kik/ICFPC2011/tree/ICFPC-submission
+
+src/  	   	  all source code
+src/*.ml       	  all OCaml source code for IO
+src/coq/*.v    	  main programs written with Coq
+src/ai		  extracted ai programs
+
+Currently, there is no proof at all.  Certification of interpretter is easy task if
+any operational semantics is given.
+
+AI is written in combinatoric way.  Using two monads "cmdex" and "aicmd", we can easily
+construct AIs.
+
+TODO
+* certify interpretter.
+* separate side effect of aicmd for test run.
+* separate monad interface in other library to construct a more generic
+  programming enviromnent.
